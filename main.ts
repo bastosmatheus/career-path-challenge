@@ -98,7 +98,7 @@ async function AIKicking(prompt: string) {
 }
 
 async function checkIfIsTheCorrectlyPlayer(player: string) {
-  const input = await page.waitForSelector(".grow input[type='text']");
+  const input = page.locator(".grow input[type='text']");
 
   if (!input) {
     console.log("won the game!!");
@@ -106,16 +106,20 @@ async function checkIfIsTheCorrectlyPlayer(player: string) {
     return;
   }
 
-  await page.type(".grow input[type='text']", "");
+  await page.type(".grow input[type='text']", player, {
+    delay: 200,
+  });
 
-  setTimeout(async () => {
-    await page.type(".grow input[type='text']", player);
-  }, 3000);
-
-  const listPlayerHasNames = await page.evaluate(async () => {
+  await page.evaluate(async () => {
     const divListPlayers = document.querySelector(
       ".grow div[role='combobox'] div[role='listbox']"
     ) as HTMLDivElement;
+
+    if (!divListPlayers) {
+      console.log("won the game!!");
+
+      return true;
+    }
 
     const listPlayerIsGreaterThanZero = divListPlayers.hasChildNodes();
 
@@ -125,18 +129,22 @@ async function checkIfIsTheCorrectlyPlayer(player: string) {
       const classesFirstElementInList = `.${firstElementInList.classList}`;
 
       await page.click(classesFirstElementInList);
-    }
 
-    return listPlayerIsGreaterThanZero;
+      return;
+    }
   });
 
-  if (!listPlayerHasNames) {
-    await page.click(".grow button");
-  }
+  const buttonSkip = page.locator(".grow button");
 
-  setTimeout(async () => {
-    await getInformantionsAboutPlayer();
-  }, 3000);
+  if (buttonSkip) {
+    input.fill("");
+
+    buttonSkip.click();
+
+    setTimeout(async () => {
+      await getInformantionsAboutPlayer();
+    }, 3000);
+  }
 }
 
 getInformantionsAboutPlayer();
