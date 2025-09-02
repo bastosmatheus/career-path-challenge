@@ -34,9 +34,9 @@ async function getInformantionsAboutPlayer() {
       const text = tr.textContent as string;
 
       // caso não tenha nenhuma informação, a TD vem sempre com vários "???"
-      const tdIsValid = !text.includes("?");
+      const trHasTeam = !text.includes("?");
 
-      if (tdIsValid) {
+      if (trHasTeam) {
         const tds = tr.querySelectorAll(
           "td"
         ) as NodeListOf<HTMLTableCellElement>;
@@ -109,6 +109,23 @@ async function checkIfIsTheCorrectlyPlayer(player: string) {
     return;
   }
 
+  const numberOfTrsBeforeInput = await page.evaluate(() => {
+    const tbody = document.querySelector("table tbody") as HTMLTableCellElement;
+    const trs = tbody?.querySelectorAll(
+      "tr"
+    ) as NodeListOf<HTMLTableRowElement>;
+    const trsWithoutTeam = Array.from(trs).filter((tr) => {
+      const text = tr.textContent as string;
+
+      // caso não tenha nenhuma informação, a TD vem sempre com vários "???"
+      const trHasTeam = !text.includes("?");
+
+      return trHasTeam;
+    });
+
+    return trsWithoutTeam.length;
+  });
+
   await input.type(player, {
     delay: 200,
   });
@@ -131,13 +148,30 @@ async function checkIfIsTheCorrectlyPlayer(player: string) {
 
       await page.click(classesFirstElementInList);
 
-      return true;
+      return listPlayerIsGreaterThanZero;
     }
 
-    return false;
+    return listPlayerIsGreaterThanZero;
   });
 
-  if (!hasListPlayers) {
+  const numberOfTrsAfterInput = await page.evaluate(() => {
+    const tbody = document.querySelector("table tbody") as HTMLTableCellElement;
+    const trs = tbody?.querySelectorAll(
+      "tr"
+    ) as NodeListOf<HTMLTableRowElement>;
+    const trsWithoutTeam = Array.from(trs).filter((tr) => {
+      const text = tr.textContent as string;
+
+      // caso não tenha nenhuma informação, a TD vem sempre com vários "???"
+      const trHasTeam = !text.includes("?");
+
+      return trHasTeam;
+    });
+
+    return trsWithoutTeam.length;
+  });
+
+  if (numberOfTrsBeforeInput === numberOfTrsAfterInput) {
     const buttonSkip = await page.$(".grow button");
 
     if (buttonSkip) {
@@ -145,10 +179,10 @@ async function checkIfIsTheCorrectlyPlayer(player: string) {
       await page.keyboard.press("Backspace");
 
       await buttonSkip.click();
-
-      await getInformantionsAboutPlayer();
     }
   }
+
+  await getInformantionsAboutPlayer();
 }
 
 getInformantionsAboutPlayer();
