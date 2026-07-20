@@ -2,8 +2,6 @@ import { GoogleGenAI } from "@google/genai";
 import puppeteer from "puppeteer";
 import { configDotenv } from "dotenv";
 
-const env = configDotenv();
-
 type InformationsAboutPlayer = {
   seasons: string;
   team: string;
@@ -11,15 +9,41 @@ type InformationsAboutPlayer = {
   matches: string;
 };
 
+const env = configDotenv();
+
 let usedNames: string[] = [];
+
 const ai = new GoogleGenAI({
   apiKey: process.env.api_key,
 });
-const browser = await puppeteer.launch({ headless: false });
+
+const browser = await puppeteer.launch({ 
+  headless: false,
+  args: [`--window-size=1920,1080`],
+  defaultViewport: null 
+});
 const page = await browser.newPage();
 
-await page.goto("https://playfootball.games/career-path-challenge/");
-await page.click("div .absolute.right-4.top-4");
+async function initApp() {
+  await page.goto("https://playfootball.games/career-path-challenge/");
+  await page.click("div .absolute > svg");
+  
+  const buttonHard = await page.evaluate(() => {
+    const divButtonsDifficulty = document.querySelector(".bg-white.flex.items-center") as HTMLDivElement 
+    
+    const buttonsDifficulty = divButtonsDifficulty.querySelectorAll("button") as NodeListOf<HTMLButtonElement>
+
+    const buttonHard = Array.from(buttonsDifficulty).filter((button) => {
+      return button.textContent.trim() === "Hard"
+    })
+
+    buttonHard[0].click();
+  })
+
+  await page.click("div .absolute.right-4.top-4");
+}
+
+
 
 async function getInformantionsAboutPlayer() {
   const informationsAboutPlayer = await page.evaluate(() => {
@@ -185,4 +209,4 @@ async function checkIfIsTheCorrectlyPlayer(player: string) {
   await getInformantionsAboutPlayer();
 }
 
-getInformantionsAboutPlayer();
+initApp();
