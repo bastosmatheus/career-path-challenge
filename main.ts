@@ -26,6 +26,9 @@ const page = await browser.newPage();
 
 async function initApp() {
   await page.goto("https://playfootball.games/career-path-challenge/");
+
+  await page.waitForSelector("div .absolute > svg");
+
   await page.click("div .absolute > svg");
   
   const buttonHard = await page.evaluate(() => {
@@ -40,10 +43,8 @@ async function initApp() {
     buttonHard[0].click();
   })
 
-  await page.click("div .absolute.right-4.top-4");
+  await getInformantionsAboutPlayer();
 }
-
-
 
 async function getInformantionsAboutPlayer() {
   const informationsAboutPlayer = await page.evaluate(() => {
@@ -58,7 +59,7 @@ async function getInformantionsAboutPlayer() {
       const text = tr.textContent as string;
 
       // caso não tenha nenhuma informação, a TD vem sempre com vários "???"
-      const trHasTeam = !text.includes("?");
+      const trHasTeam = !text.includes("--") && !text.includes("Career") && !text.includes("Years") && text !== "";
 
       if (trHasTeam) {
         const tds = tr.querySelectorAll(
@@ -84,13 +85,15 @@ async function getInformantionsAboutPlayer() {
     return { informations, numberOfTeams };
   });
 
-  const promptForAI = await preparingPromptForAI(
-    informationsAboutPlayer.informations,
-    informationsAboutPlayer.numberOfTeams
-  );
-  const player = await AIKicking(promptForAI);
+  console.log(informationsAboutPlayer);
 
-  await checkIfIsTheCorrectlyPlayer(player);
+  // const promptForAI = await preparingPromptForAI(
+  //   informationsAboutPlayer.informations,
+  //   informationsAboutPlayer.numberOfTeams
+  // );
+  // const player = await AIKicking(promptForAI);
+
+  // await checkIfIsTheCorrectlyPlayer(player);
 }
 
 async function preparingPromptForAI(
@@ -109,7 +112,7 @@ async function preparingPromptForAI(
 
 async function AIKicking(prompt: string) {
   const response = await ai.models.generateContent({
-    model: "gemini-2.0-flash",
+    model: "gemini-2.5-flash",
     contents: `
       RESPONDA COM APENAS O NOME DE UM JOGADOR DE FUTEBOL!\n
       PS: NÃO REPITA ESSES NOMES, ELES ESTÃO INCORRETOS: ${usedNames.join(
@@ -206,7 +209,7 @@ async function checkIfIsTheCorrectlyPlayer(player: string) {
     }
   }
 
-  await getInformantionsAboutPlayer();
+  // await getInformantionsAboutPlayer();
 }
 
 initApp();
