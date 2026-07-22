@@ -53,12 +53,12 @@ async function getInformantionsAboutPlayer() {
       "tr"
     ) as NodeListOf<HTMLTableRowElement>;
     let informations: InformationsAboutPlayer[] = [];
-    const numberOfTeams = trs.length;
+    const numberOfTeams = trs.length - 6;
 
     trs.forEach((tr) => {
       const text = tr.textContent as string;
 
-      // caso não tenha nenhuma informação, a TD vem sempre com vários "???"
+      // caso não tenha nenhuma informação, a TD vem sempre com vários "----"
       const trHasTeam = !text.includes("--") && !text.includes("Career") && !text.includes("Years") && text !== "";
 
       if (trHasTeam) {
@@ -85,15 +85,15 @@ async function getInformantionsAboutPlayer() {
     return { informations, numberOfTeams };
   });
 
-  console.log(informationsAboutPlayer);
+  const promptForAI = await preparingPromptForAI(
+    informationsAboutPlayer.informations,
+    informationsAboutPlayer.numberOfTeams
+  );
+  const player = await AIKicking(promptForAI);
 
-  // const promptForAI = await preparingPromptForAI(
-  //   informationsAboutPlayer.informations,
-  //   informationsAboutPlayer.numberOfTeams
-  // );
-  // const player = await AIKicking(promptForAI);
+  console.log(player);
 
-  // await checkIfIsTheCorrectlyPlayer(player);
+  await checkIfIsTheCorrectlyPlayer(player);
 }
 
 async function preparingPromptForAI(
@@ -119,7 +119,7 @@ async function AIKicking(prompt: string) {
         ", "
       )}\n
       ${prompt}
-    `,
+    `
   });
 
   const player = response.candidates[0].content?.parts[0].text as string;
@@ -209,7 +209,7 @@ async function checkIfIsTheCorrectlyPlayer(player: string) {
     }
   }
 
-  // await getInformantionsAboutPlayer();
+  await getInformantionsAboutPlayer();
 }
 
 initApp();
