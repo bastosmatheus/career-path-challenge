@@ -100,20 +100,19 @@ async function preparingPromptForAI(
   informationsAboutPlayer: InformationsAboutPlayer[],
   numberOfTeams: number
 ) {
-  let promptForAI: string = `O jogador jogou em ${numberOfTeams} times durante sua carreira.\n`;
+  let promptForAI: string = `O jogador jogou em ${numberOfTeams} times durante sua carreira.\n\n`;
 
   informationsAboutPlayer.forEach((informations) => {
-    promptForAI += `Durante as temporadas ${informations.seasons} jogou no ${informations.team}, 
-    fez ${informations.matches} partidas e marcou ${informations.goals} gols.\n`;
+    promptForAI += `Durante as temporadas ${informations.seasons} jogou no ${informations.team}, fez ${informations.matches} partidas e marcou ${informations.goals} gols.\n`;
   });
 
   return promptForAI;
 }
 
 async function AIKicking(prompt: string) {
-  const response = await ai.models.generateContent({
+  const response = await ai.interactions.create({
     model: "gemini-2.5-flash",
-    contents: `
+    input: `
       RESPONDA COM APENAS O NOME DE UM JOGADOR DE FUTEBOL!\n
       PS: NÃO REPITA ESSES NOMES, ELES ESTÃO INCORRETOS: ${usedNames.join(
         ", "
@@ -122,7 +121,9 @@ async function AIKicking(prompt: string) {
     `
   });
 
-  const player = response.candidates[0].content?.parts[0].text as string;
+  console.log(prompt);
+
+  const player = response.output_text as string;
 
   usedNames.push(player);
 
@@ -145,7 +146,7 @@ async function checkIfIsTheCorrectlyPlayer(player: string) {
       const text = tr.textContent as string;
 
       // caso não tenha nenhuma informação, a TD vem sempre com vários "???"
-      const trHasTeam = !text.includes("?");
+      const trHasTeam = !text.includes("----");
 
       return trHasTeam;
     });
@@ -171,14 +172,15 @@ async function checkIfIsTheCorrectlyPlayer(player: string) {
     if (listPlayerIsGreaterThanZero) {
       const firstElementInList = divListPlayers.firstChild as HTMLElement;
 
-      const classesFirstElementInList = `.${firstElementInList.classList}`;
+      const classesFirstElementInList = `.${firstElementInList.classList}`.replaceAll(" ", ".");
 
-      await page.click(classesFirstElementInList);
+      // ajustar o clique no elemento
+      // await page.click(`.max-h-60.overflow-auto.md`);
 
-      return listPlayerIsGreaterThanZero;
+      return true;
     }
 
-    return listPlayerIsGreaterThanZero;
+    return false;
   });
 
   const numberOfTrsAfterInput = await page.evaluate(() => {
@@ -190,7 +192,7 @@ async function checkIfIsTheCorrectlyPlayer(player: string) {
       const text = tr.textContent as string;
 
       // caso não tenha nenhuma informação, a TD vem sempre com vários "???"
-      const trHasTeam = !text.includes("?");
+      const trHasTeam = !text.includes("----");
 
       return trHasTeam;
     });
